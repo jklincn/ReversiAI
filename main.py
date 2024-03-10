@@ -42,13 +42,18 @@ class GameState(Enum):
     FINISH = 3
 
 
+class Position:
+    def __init__(self, col=-1, row=-1):
+        self.col = col
+        self.row = row
+
+
 # 控制棋局状态
 class ReversiData:
     def __init__(self):
+
         # 当前棋盘数据,先列后行
-        #  0 -----------------> x
-        #  |
-        #  |
+        #  0 -------------> x
         #  |
         #  |
         #  |
@@ -100,13 +105,12 @@ class ReversiGUI(tk.Tk):
         sys.stdout = StdoutRedirector(self.info)
         # fmt: on
         # 输出一些初始化信息
-        print("Reversi AI - 使用 MCTS 算法实现黑白棋的 AlphaGo")
+        print("Reversi AI - 使用 MCTS 算法实现黑白棋 Al 棋手")
         print("小组成员: 林杰克、邹国强、吴逸群、徐俊州")
         print("使用鼠标左键下棋，使用鼠标右键可以重置棋局")
         print("-------------------------------------------------------")
         who_first()
-        print(self.board.winfo_x())
-        print(self.board.winfo_y())
+
         # 画棋盘
         self.draw()
 
@@ -120,16 +124,13 @@ class ReversiGUI(tk.Tk):
         # 画棋子
         for col in range(8):
             for row in range(8):
-                match data.board[col][row]:
-                    # fmt: off
-                    # 5 点偏移量是为了美观性
-                    case ChessPiece.WHITE:
-                        self.board.create_oval(75*col+5, 75*row+5, 75*(col+1)-5, 75*(row+1)-5, fill="white",width=2)
-                    case ChessPiece.BLACK:
-                        self.board.create_oval(75*col+5, 75*row+5, 75*(col+1)-5, 75*(row+1)-5, fill="black",width=2)
-                    case _:
-                        pass
-                    # fmt: on
+                # fmt: off
+                # 5 点偏移量是为了美观性
+                if data.board[col][row] ==  ChessPiece.WHITE:
+                    self.board.create_oval(75*col+5, 75*row+5, 75*(col+1)-5, 75*(row+1)-5, fill="white",width=2)
+                elif data.board[col][row] ==  ChessPiece.BLACK:
+                    self.board.create_oval(75*col+5, 75*row+5, 75*(col+1)-5, 75*(row+1)-5, fill="black",width=2)
+                # fmt: on
 
 
 def click_left(event):
@@ -137,17 +138,31 @@ def click_left(event):
     col = event.x // 75
     row = event.y // 75
     # 由于画布的边缘距离所以特殊处理，画布有边缘更美观
-    print(col,row)
     if col == 8:
         col = col - 1
-    match data.state:
-        case GameState.WAIT_BLACK:
-            data.board[col][row] = ChessPiece.BLACK
-            data.state = GameState.WAIT_WHITE
-        case GameState.WAIT_WHITE:
-            data.board[col][row] = ChessPiece.WHITE
-            data.state = GameState.WAIT_BLACK
+    pos = Position(col, row)
+    print(col, row)
+
+    # todo
+
+    if data.state == GameState.WAIT_BLACK:
+        data.board[col][row] = ChessPiece.BLACK
+        data.state = GameState.WAIT_WHITE
+    elif data.state == GameState.WAIT_WHITE:
+        data.board[col][row] = ChessPiece.WHITE
+        data.state = GameState.WAIT_BLACK
     gui.draw()
+
+
+def candidate_position():
+    pos = []
+    if data.state == GameState.WAIT_BLACK:
+        # todo
+        pass
+    elif data.state == GameState.WAIT_WHITE:
+        # todo
+        pass
+
 
 def click_right(event):
     global data
@@ -158,11 +173,10 @@ def click_right(event):
 
 
 def who_first():
-    match data.first:
-        case Player.HUMAN:
-            print("对局开始，你持黑棋")
-        case Player.AI:
-            print("对局开始，你持白棋")
+    if data.first == Player.HUMAN:
+        print("对局开始，你持黑棋")
+    else:
+        print("对局开始，你持白棋")
 
 
 if __name__ == "__main__":
