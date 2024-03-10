@@ -84,7 +84,9 @@ class ReversiGUI(tk.Tk):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         width = screen_width // 5 * 3  # 预设成屏幕宽度的3/5
-        height = screen_height // 2    # 预设成屏幕宽度的1/2
+        if screen_width / screen_height == 16 / 9:
+            width = screen_width // 2  # 细微优化：16:9 的屏幕设为屏幕宽度的1/2会更好看
+        height = screen_height // 2  # 预设成屏幕高度的1/2
         x = (screen_width - width) // 2
         y = (screen_height - height) // 2
         self.geometry(f"{width}x{height}+{x}+{y}")
@@ -93,7 +95,7 @@ class ReversiGUI(tk.Tk):
         # 设置棋盘
         # fmt: off
         # 格子宽度设为一半再向 8 取整
-        self.line_width = int((width / 2) // 8)
+        self.line_width = (height-10) // 8
         self.board = tk.Canvas(self, width=self.line_width*8, height=self.line_width*8, borderwidth=2, relief="ridge", bg="#FCD57D")
         self.board.grid(row=0, column=0, padx=10, pady=5, sticky="nw")
         # 绑定鼠标事件
