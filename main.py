@@ -80,20 +80,23 @@ class ReversiGUI(tk.Tk):
         super().__init__()
         self.title("Reversi AI")
 
-        # 窗口居中显示
-        window_width = 1250
-        window_height = 620
+        # 窗口大小位置自适应
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        x = (screen_width / 2) - (window_width / 2)
-        y = (screen_height / 2) - (window_height / 2)
-        self.geometry("%dx%d+%d+%d" % (window_width, window_height, x, y))
+        width = screen_width // 5 * 3  # 预设成屏幕宽度的3/5
+        height = screen_height // 2    # 预设成屏幕宽度的1/2
+        x = (screen_width - width) // 2
+        y = (screen_height - height) // 2
+        self.geometry(f"{width}x{height}+{x}+{y}")
         self.resizable(width=False, height=False)
 
-        # fmt: off
         # 设置棋盘
-        self.board = tk.Canvas(self, width=600, height=600, borderwidth=2, relief="ridge", bg="#FCD57D")
+        # fmt: off
+        # 格子宽度设为一半再向 8 取整
+        self.line_width = int((width / 2) // 8)
+        self.board = tk.Canvas(self, width=self.line_width*8, height=self.line_width*8, borderwidth=2, relief="ridge", bg="#FCD57D")
         self.board.grid(row=0, column=0, padx=10, pady=5, sticky="nw")
+        # 绑定鼠标事件
         self.board.bind("<Button-1>", click_left)
         self.board.bind("<Button-3>", click_right)
 
@@ -118,25 +121,39 @@ class ReversiGUI(tk.Tk):
         # 清除画布
         self.board.delete("all")
         # 画线
+        # fmt: off
         for i in range(8):
-            self.board.create_line(5, i * 75, 600, i * 75, fill="black")
-            self.board.create_line(i * 75, 5, i * 75, 600, fill="black")
+            self.board.create_line(0, i * self.line_width, self.line_width * 8, i * self.line_width, fill="black")
+            self.board.create_line(i * self.line_width, 0, i * self.line_width, self.line_width * 8, fill="black")
+        # fmt: on
         # 画棋子
         for col in range(8):
             for row in range(8):
-                # fmt: off
                 # 5 点偏移量是为了美观性
-                if data.board[col][row] ==  ChessPiece.WHITE:
-                    self.board.create_oval(75*col+5, 75*row+5, 75*(col+1)-5, 75*(row+1)-5, fill="white",width=2)
-                elif data.board[col][row] ==  ChessPiece.BLACK:
-                    self.board.create_oval(75*col+5, 75*row+5, 75*(col+1)-5, 75*(row+1)-5, fill="black",width=2)
-                # fmt: on
+                if data.board[col][row] == ChessPiece.WHITE:
+                    self.board.create_oval(
+                        self.line_width * col + 5,
+                        self.line_width * row + 5,
+                        self.line_width * (col + 1) - 5,
+                        self.line_width * (row + 1) - 5,
+                        fill="white",
+                        width=2,
+                    )
+                elif data.board[col][row] == ChessPiece.BLACK:
+                    self.board.create_oval(
+                        self.line_width * col + 5,
+                        self.line_width * row + 5,
+                        self.line_width * (col + 1) - 5,
+                        self.line_width * (row + 1) - 5,
+                        fill="black",
+                        width=2,
+                    )
 
 
 def click_left(event):
     global data
-    col = event.x // 75
-    row = event.y // 75
+    col = event.x // gui.line_width
+    row = event.y // gui.line_width
     # 由于画布的边缘距离所以特殊处理，画布有边缘更美观
     if col == 8:
         col = col - 1
