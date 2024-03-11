@@ -69,6 +69,9 @@ class ReversiData:
         self.state = GameState.WAIT_BLACK
         self.first = random.choice(list(Player))
 
+        self.white_chesspiece = [Position(3,3),Position(4,4)]
+        self.black_chesspiece = [Position(3,4),Position(4,3)]
+
 
 # 控制图形化界面
 class ReversiGUI(tk.Tk):
@@ -177,10 +180,27 @@ def candidate_position():
     pos = []
     if data.state == GameState.WAIT_BLACK:
         # todo
-        pass
+        # 遍历data.board找到可下黑棋的位置
+        for col in range(8):
+            for row in range(8):
+                # 根据下棋规则进行判断
+                if data.board[col][row] == ChessPiece.DEFAULT:
+                    if is_valid_move(col, row, ChessPiece.BLACK):
+                        pos.append(Position(col, row))
     elif data.state == GameState.WAIT_WHITE:
         # todo
-        pass
+        # 遍历data.board找到可下白棋的位置
+        for col in range(8):
+            for row in range(8):
+                # 根据下棋规则判断位置是非可下
+                if data.board[col][row] == ChessPiece.DEFAULT:
+                    if is_valid_move(col, row, ChessPiece.WHITE):
+                        pos.append(Position(col, row))
+                pass
+
+def is_valid_move(col , row , color):
+    # 依据游戏规则进行判断，该位置（col , row）可以下棋返回true
+    pass
 
 
 def click_right(event):
