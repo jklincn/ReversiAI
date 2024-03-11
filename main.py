@@ -69,6 +69,9 @@ class ReversiData:
         self.state = GameState.WAIT_BLACK
         self.first = random.choice(list(Player))
 
+        self.white_chesspiece = [Position(3,3),Position(4,4)]
+        self.black_chesspiece = [Position(3,4),Position(4,3)]
+
 
 # 控制图形化界面
 class ReversiGUI(tk.Tk):
