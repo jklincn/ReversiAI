@@ -1,6 +1,7 @@
 import ctypes
 import sys
 import random
+import platform
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
@@ -178,7 +179,7 @@ class ReversiGUI(tk.Tk):
                         fill="black",
                         width=2,
                     )
-        # 当前棋局是否结束
+        # 判断当前棋局是否结束
         if data.state == GameState.FINISH:
             white_num = 0
             black_num = 0
@@ -188,8 +189,6 @@ class ReversiGUI(tk.Tk):
                         white_num = white_num + 1
                     elif data.board[row][col] == ChessPiece.BLACK:
                         black_num = black_num + 1
-                    else:
-                        messagebox.showinfo("游戏异常", "游戏逻辑错误")
             who_win = lambda a, b: (
                 "白棋赢" if a > b else ("黑棋赢" if b > a else "平局")
             )
@@ -205,24 +204,31 @@ class ReversiGUI(tk.Tk):
             if not t:
                 if data.state == GameState.WAIT_BLACK:
                     data.state = GameState.WAIT_WHITE
+                    t = candidate_position()
                     print("黑棋当前无子可下，白棋再下一回合")
+
                 elif data.state == GameState.WAIT_WHITE:
                     data.state = GameState.WAIT_BLACK
+                    t = candidate_position()
                     print("白棋当前无子可下，黑棋再下一回合")
+            # 判断是否双方都无子可下
+            if not t:
+                data.state=GameState.FINISH
+                print("双方都无子可下，提前结束棋局")
+                self.draw()
                 return
-            else:
-                # 画暗示位置
-                for _, pos in enumerate(t):
-                    self.board.create_oval(
-                        self.line_width * pos.col + 5,
-                        self.line_width * pos.row + 5,
-                        self.line_width * (pos.col + 1) - 5,
-                        self.line_width * (pos.row + 1) - 5,
-                        fill="#C1ECFF",
-                        outline="#F00606",
-                        dash=(5, 5),
-                        width=5,
-                    )
+            # 画暗示位置
+            for _, pos in enumerate(t):
+                self.board.create_oval(
+                    self.line_width * pos.col + 5,
+                    self.line_width * pos.row + 5,
+                    self.line_width * (pos.col + 1) - 5,
+                    self.line_width * (pos.row + 1) - 5,
+                    fill="#C1ECFF",
+                    outline="#F00606",
+                    dash=(5, 5),
+                    width=5,
+                )
 
 
 def click_left(event):
@@ -256,6 +262,13 @@ def click_left(event):
         if data.current_chesspiece_num == 64:
             data.state = GameState.FINISH
         gui.draw()
+        ai()
+    
+def ai():
+    # todo
+
+    gui.draw()
+
 
 
 def reverse(row, col, color):
@@ -368,6 +381,9 @@ def who_first():
 
 
 if __name__ == "__main__":
+    if platform.system() != "Windows":
+        raise SystemExit("只支持 Windows 平台")
+    print(platform.system())
     global data, gui
 
     data = ReversiData()
