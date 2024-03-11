@@ -37,9 +37,9 @@ class ChessPiece(Enum):
 
 # 下棋状态
 class GameState(Enum):
-    WAIT_WHITE = 0
-    WAIT_BLACK = 1
-    FINISH = 2
+    # AI永远执白棋
+    START = 0
+    FINISH = 1
 
 
 class Position:
@@ -80,7 +80,7 @@ class ReversiData:
         self.board[4][3] = ChessPiece.BLACK
         self.board[4][4] = ChessPiece.WHITE
 
-        self.state = GameState.WAIT_BLACK
+        self.state = GameState.START
         self.first = random.choice(list(Player))
         self.current_chesspiece_num = 4  # 当前棋子数量
 
@@ -141,7 +141,6 @@ class ReversiGUI(tk.Tk):
         print("小组成员: 林杰克、邹国强、吴逸群、徐俊州")
         print("使用鼠标左键下棋，使用鼠标右键可以重置棋局")
         print("-------------------------------------------------------")
-        who_first()
 
         # 画棋盘
         self.draw()
@@ -198,26 +197,17 @@ class ReversiGUI(tk.Tk):
             )
             return
         else:
-            # 计算可以下的地方
+            # 计算黑棋可以下的地方
             t = candidate_position()
             # 判断是否有位置可下
             if not t:
-                if data.state == GameState.WAIT_BLACK:
-                    data.state = GameState.WAIT_WHITE
-                    t = candidate_position()
                     print("黑棋当前无子可下，白棋再下一回合")
-
-                elif data.state == GameState.WAIT_WHITE:
-                    data.state = GameState.WAIT_BLACK
-                    t = candidate_position()
-                    print("白棋当前无子可下，黑棋再下一回合")
-            # 判断是否双方都无子可下
-            if not t:
-                data.state=GameState.FINISH
-                print("双方都无子可下，提前结束棋局")
-                self.draw()
-                return
-            # 画暗示位置
+                    # 判断AI是否有子可下
+                    if not ai():
+                        data.state = GameState.FINISH
+                        print("双方都无子可下，提前结束棋局")
+                        self.draw()
+                        return
             for _, pos in enumerate(t):
                 self.board.create_oval(
                     self.line_width * pos.col + 5,
@@ -247,15 +237,9 @@ def click_left(event):
     t_pos_list = candidate_position()
 
     if Position(row, col) in t_pos_list:
-        if data.state == GameState.WAIT_BLACK:
-            data.board[row][col] = ChessPiece.BLACK
-            data.state = GameState.WAIT_WHITE
-            # 调用 reverse() 翻转
-            reverse(row, col, data.board[row][col])
-        elif data.state == GameState.WAIT_WHITE:
-            data.board[row][col] = ChessPiece.WHITE
-            data.state = GameState.WAIT_BLACK
-            reverse(row, col, data.board[row][col])
+        data.board[row][col] = ChessPiece.BLACK
+        # 调用 reverse() 翻转
+        reverse(row, col, data.board[row][col])
         # 整个棋盘多一颗棋子
         data.current_chesspiece_num = data.current_chesspiece_num + 1
         # 判断棋局是否结束
@@ -263,12 +247,23 @@ def click_left(event):
             data.state = GameState.FINISH
         gui.draw()
         ai()
-    
+
+
 def ai():
+    return True
+    if a:
+        return False
+    
     # todo
 
-    gui.draw()
+    data.board[row][col] = ChessPiece.BLACK
+    reverse(row, col, data.board[row][col])
+    data.current_chesspiece_num = data.current_chesspiece_num + 1
+    if data.current_chesspiece_num == 64:
+        data.state = GameState.FINISH
 
+    gui.draw()
+    return True
 
 
 def reverse(row, col, color):
@@ -303,25 +298,16 @@ def reverse(row, col, color):
             y += dy
 
 
+# 返回黑棋可能下的位置
 def candidate_position():
     pos = []
-    if data.state == GameState.WAIT_BLACK:
-        # 遍历data.board找到可下黑棋的位置
-        for row in range(8):
-            for col in range(8):
-                # 根据下棋规则判断位置是否可下
-                if data.board[row][col] == ChessPiece.DEFAULT:
-                    if is_valid_move(row, col, ChessPiece.BLACK):
-                        pos.append(Position(row, col))
-    else:
-        # 此处 data.state 不可能为 FINISH
-        # 遍历data.board找到可下白棋的位置
-        for row in range(8):
-            for col in range(8):
-                # 根据下棋规则判断位置是否可下
-                if data.board[row][col] == ChessPiece.DEFAULT:
-                    if is_valid_move(row, col, ChessPiece.WHITE):
-                        pos.append(Position(row, col))
+    for row in range(8):
+        for col in range(8):
+            # 根据下棋规则判断位置是否可下
+            if data.board[row][col] == ChessPiece.DEFAULT:
+                if is_valid_move(row, col, ChessPiece.BLACK):
+                    pos.append(Position(row, col))
+
     return pos
 
 
@@ -366,18 +352,10 @@ def click_right(event):
     data = ReversiData()
     print("棋局已重置")
     gui.draw()
-    who_first()
 
 
 def click_debug(event):
     print(data)
-
-
-def who_first():
-    if data.first == Player.HUMAN:
-        print("对局开始，你持黑棋")
-    else:
-        print("对局开始，你持白棋")
 
 
 if __name__ == "__main__":
