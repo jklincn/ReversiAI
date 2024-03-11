@@ -30,8 +30,8 @@ class Player(Enum):
 # 棋格类型
 class ChessPiece(Enum):
     DEFAULT = 0  # 空
-    WHITE = 1  # 黑棋
-    BLACK = 2  # 白棋
+    WHITE = 1  # 白棋
+    BLACK = 2  # 黑棋
 
 
 # 下棋状态
@@ -90,7 +90,7 @@ class ReversiData:
     def __repr__(self):
         tmp_str = "============================\n"
         tmp_str = tmp_str + f"当前状态: {self.state.name}\n"
-        tmp_str = tmp_str + "0:空 1:黑棋 2:白棋 3:当前提示\n"
+        tmp_str = tmp_str + "0:空 1:白棋 2:黑棋 3:当前提示\n"
         # board
         for row in range(8):
             for col in range(8):
