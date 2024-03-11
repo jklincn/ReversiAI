@@ -214,10 +214,46 @@ def click_left(event):
         if data.state == GameState.WAIT_BLACK:
             data.board[col][row] = ChessPiece.BLACK
             data.state = GameState.WAIT_WHITE
+            # todo
+            # 调用overturn_rival()翻转棋局
+            overturn_rival(col,row,data.board[col][row])
         elif data.state == GameState.WAIT_WHITE:
             data.board[col][row] = ChessPiece.WHITE
             data.state = GameState.WAIT_BLACK
+            # todo
+            overturn_rival(col,row,data.board[col][row])
         gui.draw()
+
+def overturn_rival(col, row, color):
+    # 棋局状态存储在data.board[col][row]中，当落点为(col,row)且颜色为color时，翻转需要翻转的对手棋子
+    # 找到要翻转的对手棋子后将data.board[col][row]修改为另一种颜色即可，例如将黑色棋子改为白色：data.board[col][row] = ChessPiece.WHITE
+
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+
+    # 遍历
+    for direction in directions:
+        dx, dy = direction
+        x, y = col + dx, row + dy
+        flipped = False  # 是否找到可以翻转的对手棋子
+
+        # 在当前方向上查找对手的棋子
+        while 0 <= x < 8 and 0 <= y < 8:
+            if data.board[x][y] == ChessPiece.DEFAULT:
+                break  
+            elif data.board[x][y] == color:
+                if flipped:
+                    x, y = col + dx, row + dy # 从头翻转
+                    while data.board[x][y] != color:
+                        data.board[x][y] = color
+                        x += dx
+                        y += dy
+                    break
+                else:
+                    break
+            else:
+                flipped = True  # 发现对手棋子，标记为可翻转
+            x += dx
+            y += dy
 
 
 def candidate_position():
