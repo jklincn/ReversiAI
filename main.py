@@ -32,7 +32,6 @@ class ChessPiece(Enum):
     DEFAULT = 0  # 空
     WHITE = 1  # 黑棋
     BLACK = 2  # 白棋
-    HINT = 3  # 当前可下棋位置
 
 
 # 下棋状态
@@ -80,12 +79,24 @@ class ReversiData:
         self.board[3][4] = ChessPiece.BLACK
         self.board[4][3] = ChessPiece.BLACK
         self.board[4][4] = ChessPiece.WHITE
+        self.board[5][4] = ChessPiece.WHITE
 
         self.state = GameState.WAIT_BLACK
         self.first = random.choice(list(Player))
 
         self.white_chesspiece = [Position(3, 3), Position(4, 4)]
         self.black_chesspiece = [Position(3, 4), Position(4, 3)]
+
+    def __repr__(self):
+        tmp_str = "============================\n"
+        tmp_str = tmp_str + f"当前状态: {self.state.name}\n"
+        tmp_str = tmp_str + "0:空 1:黑棋 2:白棋 3:当前提示\n"
+        # board
+        for col in range(8):
+            for row in range(8):
+                  tmp_str = tmp_str + str(data.board[col][row].value) + " "
+            tmp_str = tmp_str + "\n"
+        return tmp_str
 
 
 # 控制图形化界面
@@ -118,6 +129,7 @@ class ReversiGUI(tk.Tk):
         self.board.grid(row=0, column=0, padx=10, pady=5, sticky="nw")
         # 绑定鼠标事件
         self.board.bind("<Button-1>", click_left)
+        self.board.bind("<Button-2>", click_debug)
         self.board.bind("<Button-3>", click_right)
 
         # 设置算法信息输出窗口
@@ -147,14 +159,6 @@ class ReversiGUI(tk.Tk):
             self.board.create_line(0, i * self.line_width, self.line_width * 8, i * self.line_width, fill="black")
             self.board.create_line(i * self.line_width, 0, i * self.line_width, self.line_width * 8, fill="black")
         # fmt: on
-        # 清除上一轮的暗示位置
-        for col in range(8):
-            for row in range(8):
-                if data.board[col][row] == ChessPiece.HINT:
-                    data.board[col][row] = ChessPiece.DEFAULT
-        # 获取新的暗示位置
-        for _, pos in enumerate(candidate_position()):
-            data.board[pos.col][pos.row] = ChessPiece.HINT
 
         # 画棋子
         for col in range(8):
@@ -178,12 +182,14 @@ class ReversiGUI(tk.Tk):
                         fill="black",
                         width=2,
                     )
-                elif data.board[col][row] == ChessPiece.HINT:
-                    self.board.create_oval(
-                        self.line_width * col + 5,
-                        self.line_width * row + 5,
-                        self.line_width * (col + 1) - 5,
-                        self.line_width * (row + 1) - 5,
+        
+        # 画暗示位置
+        for _, pos in enumerate(candidate_position()):
+            self.board.create_oval(
+                        self.line_width * pos.col + 5,
+                        self.line_width * pos.row + 5,
+                        self.line_width * (pos.col + 1) - 5,
+                        self.line_width * (pos.row + 1) - 5,
                         fill="#C1ECFF",
                         outline="#F00606",
                         dash=(5, 5),
@@ -280,6 +286,9 @@ def click_right(event):
     gui.draw()
     who_first()
 
+def click_debug(event):
+    print(data)
+    
 
 def who_first():
     if data.first == Player.HUMAN:
