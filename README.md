@@ -29,6 +29,9 @@ python main.py
 
 - \_\_init\_\_：初始化棋局。
 
+---
+---
+
 ## 功能函数
 
 ### click_left
@@ -43,3 +46,5 @@ python main.py
 
 寻找当前棋局可能的落子位置（根据 ReversiData 判断下一步棋是黑棋还是白棋）。返回 Position 数组。
 
+### is_valid_move
+根据形参返回此位置是否可以落子，判断依据为黑白棋规则
