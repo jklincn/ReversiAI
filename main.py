@@ -196,6 +196,7 @@ def candidate_position():
                 if data.board[col][row] == ChessPiece.DEFAULT:
                     if is_valid_move(col, row, ChessPiece.WHITE):
                         pos.append(Position(col, row))
+                        # 11
                 pass
 
 def is_valid_move(col , row , color):
