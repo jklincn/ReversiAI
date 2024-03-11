@@ -186,10 +186,10 @@ class ReversiGUI(tk.Tk):
         # 画暗示位置
         for _, pos in enumerate(candidate_position()):
             self.board.create_oval(
-                        self.line_width * pos.row + 5,
                         self.line_width * pos.col + 5,
-                        self.line_width * (pos.row + 1) - 5,
+                        self.line_width * pos.row + 5,
                         self.line_width * (pos.col + 1) - 5,
+                        self.line_width * (pos.row + 1) - 5,
                         fill="#C1ECFF",
                         outline="#F00606",
                         dash=(5, 5),
@@ -267,8 +267,6 @@ def is_valid_move(row, col, rowor):
             if data.board[x][y] == ChessPiece.DEFAULT:
                 break  # 遇到空格，结束查找
             elif data.board[x][y] == rowor:
-                print(f"当前判断位置({row},{col})")
-                print(f"搜索位置 {x},{y}")
                 if flipped:
                     return True  # 找到对方棋子且夹在中间，可以翻转
                 else:
