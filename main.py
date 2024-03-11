@@ -43,30 +43,30 @@ class GameState(Enum):
 
 
 class Position:
-    def __init__(self, col=-1, row=-1):
-        self.col = col
+    def __init__(self, row=-1, col=-1):
         self.row = row
+        self.col = col
 
     def __eq__(self, other):
         if isinstance(other, Position):
-            return self.col == other.col and self.row == other.row
+            return self.row == other.row and self.col == other.col
         return False
 
     def __hash__(self):
-        return hash((self.col, self.row))
+        return hash((self.row, self.col))
     
     def __str__(self):
-        return f"[{self.col}, {self.row}]"
+        return f"[{self.row}, {self.col}]"
     
     def __repr__(self):
-        return f"[{self.col}, {self.row}]"        
+        return f"[{self.row}, {self.col}]"        
 
 
 # 控制棋局状态
 class ReversiData:
     def __init__(self):
 
-        # 当前棋盘数据,先列后行
+        # 当前棋盘数据,先行后列，但画布如下图所示
         #  0 -------------> x
         #  |
         #  |
@@ -79,7 +79,7 @@ class ReversiData:
         self.board[3][4] = ChessPiece.BLACK
         self.board[4][3] = ChessPiece.BLACK
         self.board[4][4] = ChessPiece.WHITE
-        self.board[5][4] = ChessPiece.WHITE
+        self.board[2][4] = ChessPiece.WHITE
 
         self.state = GameState.WAIT_BLACK
         self.first = random.choice(list(Player))
@@ -92,9 +92,9 @@ class ReversiData:
         tmp_str = tmp_str + f"当前状态: {self.state.name}\n"
         tmp_str = tmp_str + "0:空 1:黑棋 2:白棋 3:当前提示\n"
         # board
-        for col in range(8):
-            for row in range(8):
-                  tmp_str = tmp_str + str(data.board[col][row].value) + " "
+        for row in range(8):
+            for col in range(8):
+                  tmp_str = tmp_str + str(data.board[row][col].value) + " "
             tmp_str = tmp_str + "\n"
         return tmp_str
 
@@ -161,10 +161,10 @@ class ReversiGUI(tk.Tk):
         # fmt: on
 
         # 画棋子
-        for col in range(8):
-            for row in range(8):
+        for row in range(8):
+            for col in range(8):
                 # 5 点偏移量是为了美观性
-                if data.board[col][row] == ChessPiece.WHITE:
+                if data.board[row][col] == ChessPiece.WHITE:
                     self.board.create_oval(
                         self.line_width * col + 5,
                         self.line_width * row + 5,
@@ -173,7 +173,7 @@ class ReversiGUI(tk.Tk):
                         fill="white",
                         width=2,
                     )
-                elif data.board[col][row] == ChessPiece.BLACK:
+                elif data.board[row][col] == ChessPiece.BLACK:
                     self.board.create_oval(
                         self.line_width * col + 5,
                         self.line_width * row + 5,
@@ -199,26 +199,26 @@ class ReversiGUI(tk.Tk):
 
 def click_left(event):
     global data
-    col = event.x // gui.line_width
     row = event.y // gui.line_width
+    col = event.x // gui.line_width
     # 由于画布的边缘距离所以特殊处理，画布有边缘更美观
     if col == 8:
         col = col - 1
     # debug code
-    print("\n点击位置: ", col, row)
+    print("\n点击位置: ", row, col)
     t_pos_list = candidate_position()
     print("当前可落子区域: ", t_pos_list)
 
-    if Position(col, row) in t_pos_list:
-        print("确认落子: ", col, row)
+    if Position(row, col) in t_pos_list:
+        print("确认落子: ", row, col)
         if data.state == GameState.WAIT_BLACK:
-            data.board[col][row] = ChessPiece.BLACK
+            data.board[row][col] = ChessPiece.BLACK
             data.state = GameState.WAIT_WHITE
             # todo
             # 调用overturn_rival()翻转棋局
             overturn_rival(col,row,data.board[col][row])
         elif data.state == GameState.WAIT_WHITE:
-            data.board[col][row] = ChessPiece.WHITE
+            data.board[row][col] = ChessPiece.WHITE
             data.state = GameState.WAIT_BLACK
             # todo
             overturn_rival(col,row,data.board[col][row])
@@ -261,32 +261,32 @@ def candidate_position():
     if data.state == GameState.WAIT_BLACK:
         # todo
         # 遍历data.board找到可下黑棋的位置
-        for col in range(8):
-            for row in range(8):
+        for row in range(8):
+            for col in range(8):
                 # 根据下棋规则进行判断
-                if data.board[col][row] == ChessPiece.DEFAULT:
-                    if is_valid_move(col, row, ChessPiece.BLACK):
-                        pos.append(Position(col, row))
+                if data.board[row][col] == ChessPiece.DEFAULT:
+                    if is_valid_move(row, col, ChessPiece.BLACK):
+                        pos.append(Position(row, col))
     elif data.state == GameState.WAIT_WHITE:
         # todo
         # 遍历data.board找到可下白棋的位置
-        for col in range(8):
-            for row in range(8):
+        for row in range(8):
+            for col in range(8):
                 # 根据下棋规则判断位置是非可下
-                if data.board[col][row] == ChessPiece.DEFAULT:
-                    if is_valid_move(col, row, ChessPiece.WHITE):
-                        pos.append(Position(col, row))
+                if data.board[row][col] == ChessPiece.DEFAULT:
+                    if is_valid_move(row, col, ChessPiece.WHITE):
+                        pos.append(Position(row, col))
     return pos
 
 
-def is_valid_move(col, row, color):
-    # 依据游戏规则进行判断，该位置（col , row）可以下棋返回true
-    # color: 本次下棋的棋子颜色
+def is_valid_move(row, col, rowor):
+    # 依据游戏规则进行判断，该位置（row , col）可以下棋返回true
+    # rowor: 本次下棋的棋子颜色
     # 该位置必须能翻转棋子才能下棋
     # 翻转规则：当自己放下的棋子在横向，竖向，斜向八个方向内有一个自己的棋子，则被夹在中间的的棋子全部翻转为自己的棋子，被夹在中间的必须是对方的棋子，不能含有空格
 
     # 判断该位置是否为空
-    if data.board[col][row] != ChessPiece.DEFAULT:
+    if data.board[row][col] != ChessPiece.DEFAULT:
         return False
 
     # 定义八个方向的偏移量，用于在棋盘上沿着这些方向进行检查
@@ -295,14 +295,14 @@ def is_valid_move(col, row, color):
     # 遍历八个方向
     for direction in directions:
         dx, dy = direction
-        x, y = col + dx, row + dy
+        x, y = row + dx, col + dy
         flipped = False  # 是否找到可以翻转的对方棋子
 
         # 在当前方向上查找对方的棋子
         while 0 <= x < 8 and 0 <= y < 8:
             if data.board[x][y] == ChessPiece.DEFAULT:
                 break  # 遇到空格，结束查找
-            elif data.board[x][y] == color:
+            elif data.board[x][y] == rowor:
                 if flipped:
                     return True  # 找到对方棋子且夹在中间，可以翻转
                 else:
