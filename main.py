@@ -2,8 +2,8 @@ import ctypes
 import sys
 import random
 import tkinter as tk
-import tkinter.ttk as ttk
 from tkinter import scrolledtext
+from tkinter import messagebox
 from enum import Enum
 
 
@@ -36,10 +36,9 @@ class ChessPiece(Enum):
 
 # 下棋状态
 class GameState(Enum):
-    NotStart = 0
-    WAIT_WHITE = 1
-    WAIT_BLACK = 2
-    FINISH = 3
+    WAIT_WHITE = 0
+    WAIT_BLACK = 1
+    FINISH = 2
 
 
 class Position:
@@ -54,12 +53,12 @@ class Position:
 
     def __hash__(self):
         return hash((self.row, self.col))
-    
+
     def __str__(self):
         return f"[{self.row}, {self.col}]"
-    
+
     def __repr__(self):
-        return f"[{self.row}, {self.col}]"        
+        return f"[{self.row}, {self.col}]"
 
 
 # 控制棋局状态
@@ -79,13 +78,10 @@ class ReversiData:
         self.board[3][4] = ChessPiece.BLACK
         self.board[4][3] = ChessPiece.BLACK
         self.board[4][4] = ChessPiece.WHITE
-        self.board[2][4] = ChessPiece.WHITE
 
         self.state = GameState.WAIT_BLACK
         self.first = random.choice(list(Player))
-
-        self.white_chesspiece = [Position(3, 3), Position(4, 4)]
-        self.black_chesspiece = [Position(3, 4), Position(4, 3)]
+        self.current_chesspiece_num = 4  # 当前棋子数量
 
     def __repr__(self):
         tmp_str = "============================\n"
@@ -94,7 +90,7 @@ class ReversiData:
         # board
         for row in range(8):
             for col in range(8):
-                  tmp_str = tmp_str + str(data.board[row][col].value) + " "
+                tmp_str = tmp_str + str(data.board[row][col].value) + " "
             tmp_str = tmp_str + "\n"
         return tmp_str
 
@@ -182,10 +178,42 @@ class ReversiGUI(tk.Tk):
                         fill="black",
                         width=2,
                     )
-        
-        # 画暗示位置
-        for _, pos in enumerate(candidate_position()):
-            self.board.create_oval(
+        # 当前棋局是否结束
+        if data.state == GameState.FINISH:
+            white_num = 0
+            black_num = 0
+            for row in range(8):
+                for col in range(8):
+                    if data.board[row][col] == ChessPiece.WHITE:
+                        white_num = white_num + 1
+                    elif data.board[row][col] == ChessPiece.BLACK:
+                        black_num = black_num + 1
+                    else:
+                        messagebox.showinfo("游戏异常", "游戏逻辑错误")
+            who_win = lambda a, b: (
+                "白棋赢" if a > b else ("黑棋赢" if b > a else "平局")
+            )
+            messagebox.showinfo(
+                "游戏结束",
+                f"白棋:{white_num}, 黑棋:{black_num}, {who_win(white_num,black_num)}",
+            )
+            return
+        else:
+            # 计算可以下的地方
+            t = candidate_position()
+            # 判断是否有位置可下
+            if not t:
+                if data.state == GameState.WAIT_BLACK:
+                    data.state = GameState.WAIT_WHITE
+                    print("黑棋当前无子可下，白棋再下一回合")
+                elif data.state == GameState.WAIT_WHITE:
+                    data.state = GameState.WAIT_BLACK
+                    print("白棋当前无子可下，黑棋再下一回合")
+                return
+            else:
+                # 画暗示位置
+                for _, pos in enumerate(t):
+                    self.board.create_oval(
                         self.line_width * pos.col + 5,
                         self.line_width * pos.row + 5,
                         self.line_width * (pos.col + 1) - 5,
@@ -199,6 +227,9 @@ class ReversiGUI(tk.Tk):
 
 def click_left(event):
     global data
+    if data.state == GameState.FINISH:
+        return
+    # 注意画布布局方向
     row = event.y // gui.line_width
     col = event.x // gui.line_width
     # 由于画布有边缘距离所以值会超一点，这里做特殊处理（画布有边缘更美观）
@@ -207,24 +238,27 @@ def click_left(event):
     if col == 8:
         col = col - 1
 
-    print("\n点击位置: ", row, col)
     t_pos_list = candidate_position()
-    print("当前可落子区域: ", t_pos_list)
 
     if Position(row, col) in t_pos_list:
-        print("确认落子: ", row, col)
         if data.state == GameState.WAIT_BLACK:
             data.board[row][col] = ChessPiece.BLACK
             data.state = GameState.WAIT_WHITE
-            # 调用overturn_rival()翻转棋局
-            overturn_rival(row,col,data.board[row][col])
+            # 调用 reverse() 翻转
+            reverse(row, col, data.board[row][col])
         elif data.state == GameState.WAIT_WHITE:
             data.board[row][col] = ChessPiece.WHITE
             data.state = GameState.WAIT_BLACK
-            overturn_rival(row,col,data.board[row][col])
+            reverse(row, col, data.board[row][col])
+        # 整个棋盘多一颗棋子
+        data.current_chesspiece_num = data.current_chesspiece_num + 1
+        # 判断棋局是否结束
+        if data.current_chesspiece_num == 64:
+            data.state = GameState.FINISH
         gui.draw()
 
-def overturn_rival(row, col, color):
+
+def reverse(row, col, color):
     # 棋局状态存储在data.board[row][col]中，当落点为(row,col)且颜色为color时，翻转需要翻转的对手棋子
     # 找到要翻转的对手棋子后将data.board[row][col]修改为另一种颜色即可，例如将黑色棋子改为白色：data.board[row][col] = ChessPiece.WHITE
 
@@ -239,10 +273,10 @@ def overturn_rival(row, col, color):
         # 在当前方向上查找对手的棋子
         while 0 <= x < 8 and 0 <= y < 8:
             if data.board[x][y] == ChessPiece.DEFAULT:
-                break  
+                break
             elif data.board[x][y] == color:
                 if flipped:
-                    x, y = row + dx, col + dy # 从头翻转
+                    x, y = row + dx, col + dy  # 从头翻转
                     while data.board[x][y] != color:
                         data.board[x][y] = color
                         x += dx
@@ -262,15 +296,16 @@ def candidate_position():
         # 遍历data.board找到可下黑棋的位置
         for row in range(8):
             for col in range(8):
-                # 根据下棋规则进行判断
+                # 根据下棋规则判断位置是否可下
                 if data.board[row][col] == ChessPiece.DEFAULT:
                     if is_valid_move(row, col, ChessPiece.BLACK):
                         pos.append(Position(row, col))
-    elif data.state == GameState.WAIT_WHITE:
+    else:
+        # 此处 data.state 不可能为 FINISH
         # 遍历data.board找到可下白棋的位置
         for row in range(8):
             for col in range(8):
-                # 根据下棋规则判断位置是非可下
+                # 根据下棋规则判断位置是否可下
                 if data.board[row][col] == ChessPiece.DEFAULT:
                     if is_valid_move(row, col, ChessPiece.WHITE):
                         pos.append(Position(row, col))
@@ -320,9 +355,10 @@ def click_right(event):
     gui.draw()
     who_first()
 
+
 def click_debug(event):
     print(data)
-    
+
 
 def who_first():
     if data.first == Player.HUMAN:
