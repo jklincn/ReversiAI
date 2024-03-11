@@ -199,9 +199,42 @@ def candidate_position():
                         # 11
                 pass
 
-def is_valid_move(col , row , color):
+    
+def is_valid_move(col, row, color):
     # 依据游戏规则进行判断，该位置（col , row）可以下棋返回true
-    pass
+    # color: 本次下棋的棋子颜色
+    # 该位置必须能翻转棋子才能下棋
+    # 翻转规则：当自己放下的棋子在横向，竖向，斜向八个方向内有一个自己的棋子，则被夹在中间的的棋子全部翻转为自己的棋子，被夹在中间的必须是对方的棋子，不能含有空格
+    
+    # 判断该位置是否为空
+    if data.board[col][row] != ChessPiece.DEFAULT:
+        return False
+
+    # 定义八个方向的偏移量，用于在棋盘上沿着这些方向进行检查
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+
+    # 遍历八个方向
+    for direction in directions:
+        dx, dy = direction
+        x, y = col + dx, row + dy
+        flipped = False  # 是否找到可以翻转的对方棋子
+
+        # 在当前方向上查找对方的棋子
+        while 0 <= x < 8 and 0 <= y < 8:
+            if data.board[x][y] == ChessPiece.DEFAULT:
+                break  # 遇到空格，结束查找
+            elif data.board[x][y] == color:
+                if flipped:
+                    return True  # 找到对方棋子且夹在中间，可以翻转
+                else:
+                    break  # 没有夹在中间的对方棋子，不可翻转
+            else:
+                flipped = True  # 发现对方棋子，标记为可翻转
+            x += dx
+            y += dy
+
+    return False  # 无法在任何方向上找到可以翻转的对方棋子
+
 
 
 def click_right(event):
