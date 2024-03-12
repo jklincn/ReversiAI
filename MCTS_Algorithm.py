@@ -262,7 +262,6 @@ def mctsNextPosition(board):
 
             child = t_childrens
 
-    print("loop count: ", loop)
     max_avg_reward = -1
     mt_result = (0, 0)
     for n_tuple in root:

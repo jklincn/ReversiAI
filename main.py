@@ -2,6 +2,7 @@ import ctypes
 import sys
 import random
 import platform
+import time
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
@@ -86,13 +87,13 @@ class ReversiData:
         self.current_chesspiece_num = 4  # 当前棋子数量
 
     def __repr__(self):
-        tmp_str = "============================\n"
+        tmp_str = "========== 调试信息 ==========\n"
         tmp_str = tmp_str + f"当前状态: {self.state.name}\n"
-        tmp_str = tmp_str + "0:空 1:白棋 2:黑棋 3:当前提示\n"
+        tmp_str = tmp_str + "0:空 1:白棋 2:黑棋\n"
         # board
         for row in range(8):
             for col in range(8):
-                tmp_str = tmp_str + str(data.board[row][col].value) + " "
+                tmp_str = tmp_str + str(data.board[row][col].value) + "  "
             tmp_str = tmp_str + "\n"
         return tmp_str
 
@@ -194,7 +195,9 @@ class ReversiGUI(tk.Tk):
             )
             messagebox.showinfo(
                 "游戏结束",
-                f"白棋:{white_num}, 黑棋:{black_num}, {who_win(white_num,black_num)}",
+                "白棋:{}, 黑棋:{}, {}\nAI总耗时: {:.6} 秒".format(
+                    white_num, black_num, who_win(white_num, black_num), total_Time
+                ),
             )
             return
         else:
@@ -202,31 +205,34 @@ class ReversiGUI(tk.Tk):
             t = candidate_position()
             # 判断是否有位置可下
             if not t:
-                    print("黑棋当前无子可下，白棋再下一回合")
-                    # 判断AI是否有子可下
-                    if not ai(data.board):
-                        data.state = GameState.FINISH
-                        print("双方都无子可下，提前结束棋局")
-                        self.draw()
-                        return
-            for _, pos in enumerate(t):
-                self.board.create_oval(
-                    self.line_width * pos.col + 5,
-                    self.line_width * pos.row + 5,
-                    self.line_width * (pos.col + 1) - 5,
-                    self.line_width * (pos.row + 1) - 5,
-                    fill="#C1ECFF",
-                    outline="#F00606",
-                    dash=(5, 5),
-                    width=5,
-                )
+                print("黑棋当前无子可下，白棋再下一回合")
+                # 判断AI是否有子可下
+                if not ai():
+                    data.state = GameState.FINISH
+                    print("双方都无子可下，提前结束棋局")
+                    self.draw()
+            else:
+                for _, pos in enumerate(t):
+                    self.board.create_oval(
+                        self.line_width * pos.col + 5,
+                        self.line_width * pos.row + 5,
+                        self.line_width * (pos.col + 1) - 5,
+                        self.line_width * (pos.row + 1) - 5,
+                        fill="#C1ECFF",
+                        outline="#F00606",
+                        dash=(5, 5),
+                        width=5,
+                    )
 
 
 def click_left(event):
+
+    # todo: 避免AI还没下完的时候人类又点击鼠标
+
     global data
     if data.state == GameState.FINISH:
         return
-    # 注意画布布局方向
+    # 读取鼠标坐标，注意画布布局方向
     row = event.y // gui.line_width
     col = event.x // gui.line_width
     # 由于画布有边缘距离所以值会超一点，这里做特殊处理（画布有边缘更美观）
@@ -235,9 +241,10 @@ def click_left(event):
     if col == 8:
         col = col - 1
 
-    t_pos_list = candidate_position()
+    # 获取当前人类可以下的棋子位置
+    t = candidate_position()
 
-    if Position(row, col) in t_pos_list:
+    if Position(row, col) in t:
         data.board[row][col] = ChessPiece.BLACK
         # 调用 reverse() 翻转
         reverse(row, col, data.board[row][col])
@@ -247,35 +254,39 @@ def click_left(event):
         if data.current_chesspiece_num == 64:
             data.state = GameState.FINISH
         gui.draw()
-        ai(data.board)
+        ai()
 
-def transform_board(old_board, array_to_dic=True):
-    BOARD_SIZE = 8
-    if array_to_dic:
-        board = {}
-    else:
-        board = [[]]
-    for i in range(0, BOARD_SIZE):
-        board[i] = {}
-        for j in range(0, BOARD_SIZE):
-            board[i][j] = old_board[i][j].value
+
+def transform_board():
+    board = {}
+    for row in range(8):
+        board[row] = {}
+        for col in range(8):
+            board[row][col] = data.board[row][col].value
     return board
 
-def ai(borad):
-    borad = transform_board(borad)
-    mcts_possibility = len(rvs.possible_positions(borad, rvs.COMPUTER_NUM))
-    # 表示AI无子可下
-    if mcts_possibility == 0:
+
+def ai():
+    global total_Time
+    if data.state == GameState.FINISH:
+        return True
+    tmp_borad = transform_board()
+    # 判断AI是否无子可下
+    if not rvs.possible_positions(tmp_borad, rvs.COMPUTER_NUM):
+        print("白棋当前无子可下，黑棋再下一回合")
         return False
-    
-    # todo
-    row, col = rvs.mctsNextPosition(borad)
+    start_time = time.perf_counter()
+    row, col = rvs.mctsNextPosition(tmp_borad)
+    end_time = time.perf_counter()
+    total_Time = total_Time + end_time - start_time
+    print(
+        "白棋落子 [{}, {}], 此步耗时: {:.6} 秒".format(row, col, end_time - start_time)
+    )
     data.board[row][col] = ChessPiece.WHITE
     reverse(row, col, data.board[row][col])
     data.current_chesspiece_num = data.current_chesspiece_num + 1
     if data.current_chesspiece_num == 64:
         data.state = GameState.FINISH
-
     gui.draw()
     return True
 
@@ -365,6 +376,7 @@ def click_right(event):
     global data
     data = ReversiData()
     print("棋局已重置")
+    print("=============================")
     gui.draw()
 
 
@@ -375,11 +387,11 @@ def click_debug(event):
 if __name__ == "__main__":
     if platform.system() != "Windows":
         raise SystemExit("只支持 Windows 平台")
-    print(platform.system())
-    global data, gui
 
     data = ReversiData()
 
     gui = ReversiGUI()
+
+    total_Time = 0
 
     gui.mainloop()
