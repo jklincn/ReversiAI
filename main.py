@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
 from enum import Enum
+import MCTS_Algorithm as rvs
 
 
 # 输出重定向到窗口中
@@ -203,7 +204,7 @@ class ReversiGUI(tk.Tk):
             if not t:
                     print("黑棋当前无子可下，白棋再下一回合")
                     # 判断AI是否有子可下
-                    if not ai():
+                    if not ai(data.board):
                         data.state = GameState.FINISH
                         print("双方都无子可下，提前结束棋局")
                         self.draw()
@@ -246,17 +247,30 @@ def click_left(event):
         if data.current_chesspiece_num == 64:
             data.state = GameState.FINISH
         gui.draw()
-        ai()
+        ai(data.board)
 
+def transform_board(old_board, array_to_dic=True):
+    BOARD_SIZE = 8
+    if array_to_dic:
+        board = {}
+    else:
+        board = [[]]
+    for i in range(0, BOARD_SIZE):
+        board[i] = {}
+        for j in range(0, BOARD_SIZE):
+            board[i][j] = old_board[i][j].value
+    return board
 
-def ai():
-    return True
-    if a:
+def ai(borad):
+    borad = transform_board(borad)
+    mcts_possibility = len(rvs.possible_positions(borad, rvs.COMPUTER_NUM))
+    # 表示AI无子可下
+    if mcts_possibility == 0:
         return False
     
     # todo
-
-    data.board[row][col] = ChessPiece.BLACK
+    row, col = rvs.mctsNextPosition(borad)
+    data.board[row][col] = ChessPiece.WHITE
     reverse(row, col, data.board[row][col])
     data.current_chesspiece_num = data.current_chesspiece_num + 1
     if data.current_chesspiece_num == 64:
