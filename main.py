@@ -233,6 +233,7 @@ class Result:
         self.num = 0
         self.white_win = 0
         self.black_win = 0
+        self.no_win = 0
 
 def save_result():
     global result
@@ -257,6 +258,8 @@ def save_result():
         result.white_win = result.white_win + 1
     elif white_num < black_num:
         result.black_win = result.black_win + 1
+    else:
+        result.no_win = result.no_win + 1
     return
 
 def test(event):
@@ -271,7 +274,7 @@ def test(event):
         data = ReversiData()
         total_Time = 0
         test_extern()
-    print("共下 {} 局, 白棋赢 {} 局, 黑棋赢 {} 局".format(result.num,result.white_win,result.black_win))
+    print("共下 {} 局, 白棋赢 {} 局, 黑棋赢 {} 局，和棋 {} 局".format(result.num,result.white_win,result.black_win,result.no_win))
     print("白棋共有: {}, 平均每局: {}".format(result.white_num,result.white_num/result.num))
     print("黑棋共有: {}, 平均每局: {}".format(result.black_num,result.black_num/result.num))
 
