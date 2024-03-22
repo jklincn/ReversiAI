@@ -186,7 +186,7 @@ def mctsNextPosition(board):
 
                 #实现最大最小搜索，电脑选择最大值，玩家选择最小值
                 if isMCTSTurn:
-                    cval = ucb1(n_tuple, parent_playout, 0.1)
+                    cval = ucb1(n_tuple, parent_playout, 1)
 
                     if cval >= maxval:
                         if cval == maxval:
@@ -195,7 +195,7 @@ def mctsNextPosition(board):
                             maxidxlist = [cidx]
                             maxval = cval
                 else:
-                    cval = ucb1(n_tuple, parent_playout, -0.1)
+                    cval = ucb1(n_tuple, parent_playout, -10)
 
                     if cval <= maxval:
                         if cval == maxval:
@@ -219,17 +219,11 @@ def mctsNextPosition(board):
     root = expand(board, COMPUTER_NUM)
     current_board = getInitialBoard()
     current_board2 = getInitialBoard()
-    start_time = time.time()
 
-    for loop in range(0, 5000):
-
-        # 思考最大时间限制
-        if (time.time() - start_time) >= MAX_THINK_TIME:
-            break
+    for loop in range(0, 6000):
 
         # current_path是一个放置棋子的位置列表，根据此列表进行后续操作
         current_path = find_path(root, loop)
-
         tile = COMPUTER_NUM
         for temp in current_path:
             updateBoard(current_board, tile, temp[0], temp[1])
