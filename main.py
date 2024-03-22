@@ -83,7 +83,6 @@ class ReversiData:
         self.board[4][4] = ChessPiece.WHITE
 
         self.state = GameState.START
-        self.first = random.choice(list(Player))
         self.current_chesspiece_num = 4  # 当前棋子数量
 
     def __repr__(self):
@@ -130,6 +129,9 @@ class ReversiGUI(tk.Tk):
         self.board.bind("<Button-1>", click_left)
         self.board.bind("<Button-2>", click_debug)
         self.board.bind("<Button-3>", click_right)
+
+        # test 
+        self.bind("<KeyPress>", test)
 
         # 设置算法信息输出窗口
         self.info = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.NORMAL, font=("微软雅黑", 12))
@@ -222,6 +224,23 @@ class ReversiGUI(tk.Tk):
                         dash=(5, 5),
                         width=5,
                     )
+
+def test(event):
+    global data
+    if data.state == GameState.FINISH:
+        return
+    t = candidate_position()
+    pos = random.choice(t)
+    row = pos.row
+    col = pos.col
+    data.board[row][col] = ChessPiece.BLACK
+    reverse(row, col, data.board[row][col])
+    data.current_chesspiece_num = data.current_chesspiece_num + 1
+    # 判断棋局是否结束
+    if data.current_chesspiece_num == 64:
+        data.state = GameState.FINISH
+    gui.draw()
+    ai()
 
 
 def click_left(event):
