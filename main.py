@@ -138,10 +138,10 @@ class ReversiGUI(tk.Tk):
         self.board.grid(row=0, column=0, padx=10, pady=5, sticky="nw")
         # 绑定鼠标事件
         self.board.bind("<Button-1>", click_left) # 左键下棋
-        self.board.bind("<Button-2>", click_auto) # 中键输出调试信息
         self.board.bind("<Button-3>", click_right) # 右键重置
-        self.board.bind("<Button-4>", click_right) # 滚轮向上
-        self.board.bind("<Button-5>", click_right) # 滚轮向下
+
+        self.bind("<Button-2>", click_auto) # 鼠标中键设置自动运行
+        self.bind("<MouseWheel>", set_difficulty) # 滚轮向上
 
 
         # 设置算法信息输出窗口
@@ -200,10 +200,8 @@ class ReversiGUI(tk.Tk):
             black_num = 0
             for row in range(8):
                 for col in range(8):
-                    if data.board[row][col] == ChessPiece.WHITE:
-                        white_num = white_num + 1
-                    elif data.board[row][col] == ChessPiece.BLACK:
-                        black_num = black_num + 1
+                    white_num += data.board[row][col] == ChessPiece.WHITE
+                    black_num += data.board[row][col] == ChessPiece.BLACK
             who_win = lambda a, b: (
                 "白棋赢" if a > b else ("黑棋赢" if b > a else "平局")
             )
@@ -237,6 +235,23 @@ class ReversiGUI(tk.Tk):
                         dash=(5, 5),
                         width=5,
                     )
+
+
+def set_difficulty(event):
+    global data
+    if data.state != GameState.STOP:
+        return
+    if event.delta > 0:
+        if data.difficulty == Difficulty.EASY:
+            data.difficulty = Difficulty.MEDIUM
+        elif data.difficulty == Difficulty.MEDIUM:
+            data.difficulty = Difficulty.HARD
+    else:
+        if data.difficulty == Difficulty.MEDIUM:
+            data.difficulty = Difficulty.EASY
+        elif data.difficulty == Difficulty.HARD:
+            data.difficulty = Difficulty.MEDIUM
+    print("当前难度: {}".format(data.difficulty.name))
 
 
 def click_left(event):
@@ -407,7 +422,7 @@ def click_right(event):
     gui.draw()
 
 
-# ------------------------------------- 自动下棋代码 -----------------------------------
+# ------------------------------------- 自动下棋代码 Start -----------------------------------
 class Result:
     def __init__(self):
         self.white_num = 0
@@ -422,6 +437,8 @@ def click_auto(event):
     global data
     global total_Time
     loop = simpledialog.askinteger("Auto", "请输入棋局总数")
+    if loop is None:
+        return
     result = Result()
 
     while result.loop < int(loop):
@@ -478,7 +495,7 @@ def auto_run():
         ai()
 
 
-# ------------------------------------- 自动下棋代码 -----------------------------------
+# ------------------------------------- 自动下棋代码 End -----------------------------------
 
 if __name__ == "__main__":
     if platform.system() != "Windows":
