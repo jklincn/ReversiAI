@@ -6,6 +6,7 @@ import time
 import tkinter as tk
 from tkinter import scrolledtext
 from tkinter import messagebox
+from tkinter import simpledialog
 from enum import Enum
 import MCTS_Algorithm as rvs
 
@@ -39,16 +40,18 @@ class ChessPiece(Enum):
 
 # 下棋状态
 class GameState(Enum):
-    # AI永远执白棋
-    START = 0
-    FINISH = 1
+    STOP = 0  # 重置后的暂停状态，此时可以修改难度
+    START = 1  # 开始下棋
+    FINISH = 2  # 结束
+    AUTO = 3  # 自动下棋
+    AUTO_FINISH = 4  # 自动下棋中某一句棋局结束
 
-# 下棋状态
+
+# 难度设置
 class Difficulty(Enum):
-    # AI永远执白棋
     EASY = 0
     MEDIUM = 1
-    HARD = 2 
+    HARD = 2
 
 
 class Position:
@@ -73,7 +76,7 @@ class Position:
 
 # 控制棋局状态
 class ReversiData:
-    def __init__(self):
+    def __init__(self, state=GameState.STOP):
 
         # 当前棋盘数据,先行后列，但画布如下图所示
         #  0 -------------> x
@@ -89,7 +92,7 @@ class ReversiData:
         self.board[4][3] = ChessPiece.BLACK
         self.board[4][4] = ChessPiece.WHITE
 
-        self.state = GameState.START
+        self.state = state
         self.difficulty = Difficulty.EASY
         self.current_chesspiece_num = 4  # 当前棋子数量
 
@@ -135,13 +138,11 @@ class ReversiGUI(tk.Tk):
         self.board.grid(row=0, column=0, padx=10, pady=5, sticky="nw")
         # 绑定鼠标事件
         self.board.bind("<Button-1>", click_left) # 左键下棋
-        self.board.bind("<Button-2>", click_debug) # 中键输出调试信息
+        self.board.bind("<Button-2>", click_auto) # 中键输出调试信息
         self.board.bind("<Button-3>", click_right) # 右键重置
         self.board.bind("<Button-4>", click_right) # 滚轮向上
         self.board.bind("<Button-5>", click_right) # 滚轮向下
 
-        # test 
-        self.bind("<KeyPress>", test)
 
         # 设置算法信息输出窗口
         self.info = scrolledtext.ScrolledText(self, wrap=tk.WORD, state=tk.NORMAL, font=("微软雅黑", 12))
@@ -162,6 +163,8 @@ class ReversiGUI(tk.Tk):
         global data
         # 清除画布
         self.board.delete("all")
+        if data.state == GameState.AUTO or data.state == GameState.AUTO_FINISH:
+            return
         # 画线
         # fmt: off
         for i in range(8):
@@ -191,7 +194,7 @@ class ReversiGUI(tk.Tk):
                         fill="black",
                         width=2,
                     )
-        # 判断当前棋局是否结束
+        # 处理棋局结束状态
         if data.state == GameState.FINISH:
             white_num = 0
             black_num = 0
@@ -236,82 +239,6 @@ class ReversiGUI(tk.Tk):
                     )
 
 
-class Result:
-    def __init__(self):
-        self.white_num = 0
-        self.black_num = 0
-        self.num = 0
-        self.white_win = 0
-        self.black_win = 0
-        self.no_win = 0
-
-def save_result():
-    global result
-    white_num = 0
-    black_num = 0
-    for row in range(8):
-        for col in range(8):
-            if data.board[row][col] == ChessPiece.WHITE:
-                white_num = white_num + 1
-            elif data.board[row][col] == ChessPiece.BLACK:
-                black_num = black_num + 1
-    who_win = lambda a, b: ("白棋赢" if a > b else ("黑棋赢" if b > a else "平局"))
-    print(
-        "白棋:{}, 黑棋:{}, {}\nAI总耗时: {:.6} 秒".format(
-            white_num, black_num, who_win(white_num, black_num), total_Time
-        )
-    )
-    result.white_num = result.white_num + white_num
-    result.black_num = result.black_num + black_num
-    result.num = result.num + 1
-    if white_num > black_num:
-        result.white_win = result.white_win + 1
-    elif white_num < black_num:
-        result.black_win = result.black_win + 1
-    else:
-        result.no_win = result.no_win + 1
-    return
-
-def test(event):
-    global data
-    global result
-    global total_Time
-    if len(sys.argv) == 0:
-        return
-    result = Result()
-    loop = sys.argv[1]
-    while result.num < int(loop):
-        data = ReversiData()
-        total_Time = 0
-        test_extern()
-    print("共下 {} 局, 白棋赢 {} 局, 黑棋赢 {} 局，和棋 {} 局".format(result.num,result.white_win,result.black_win,result.no_win))
-    print("白棋共有: {}, 平均每局: {}".format(result.white_num,result.white_num/result.num))
-    print("黑棋共有: {}, 平均每局: {}".format(result.black_num,result.black_num/result.num))
-
-def test_extern():
-    global data
-    while data.state != GameState.FINISH:
-        t = candidate_position()
-        if not t:
-            print("黑棋当前无子可下，白棋再下一回合")
-            if not ai():
-                    data.state = GameState.FINISH
-                    print("双方都无子可下，提前结束棋局")
-            continue
-        pos = random.choice(t)
-        row = pos.row
-        col = pos.col
-        print("黑棋落子 [{}, {}]".format(row, col))
-        data.board[row][col] = ChessPiece.BLACK
-        reverse(row, col, data.board[row][col])
-        data.current_chesspiece_num = data.current_chesspiece_num + 1
-        # 判断棋局是否结束
-        if data.current_chesspiece_num == 64:
-            data.state = GameState.FINISH
-        ai()
-    save_result()
-
-
 def click_left(event):
 
     # todo: 避免AI还没下完的时候人类又点击鼠标
@@ -319,9 +246,14 @@ def click_left(event):
     global data
     if data.state == GameState.FINISH:
         return
+    if data.state == GameState.STOP:
+        data.state = GameState.START
+        print("开始新对局，当前AI难度: {}".format(data.difficulty.name))
+
     # 读取鼠标坐标，注意画布布局方向
     row = event.y // gui.line_width
     col = event.x // gui.line_width
+
     # 由于画布有边缘距离所以值会超一点，这里做特殊处理（画布有边缘更美观）
     if row == 8:
         row = row - 1
@@ -338,9 +270,7 @@ def click_left(event):
         # 整个棋盘多一颗棋子
         data.current_chesspiece_num = data.current_chesspiece_num + 1
         # 判断棋局是否结束
-        if data.current_chesspiece_num == 64:
-            data.state = GameState.FINISH
-        gui.draw()
+        check_finish()
         ai()
 
 
@@ -353,9 +283,21 @@ def transform_board():
     return board
 
 
+def check_finish():
+    global data
+    if data.state == GameState.AUTO:
+        if data.current_chesspiece_num == 64:
+            data.state = GameState.AUTO_FINISH
+        return
+    if data.current_chesspiece_num == 64:
+        data.state = GameState.FINISH
+    gui.draw()
+
+
+# AI 落子
 def ai():
     global total_Time
-    if data.state == GameState.FINISH:
+    if data.state == GameState.FINISH or data.state == GameState.AUTO_FINISH:
         return True
     tmp_borad = transform_board()
     # 判断AI是否无子可下
@@ -366,15 +308,13 @@ def ai():
     row, col = rvs.mctsNextPosition(tmp_borad)
     end_time = time.perf_counter()
     total_Time = total_Time + end_time - start_time
-    print(
-        "白棋落子 [{}, {}], 此步耗时: {:.6} 秒".format(row, col, end_time - start_time)
-    )
+    # fmt: off
+    print("白棋落子 [{}, {}], 此步耗时: {:.6} 秒".format(row, col, end_time - start_time))
+    # fmt: on
     data.board[row][col] = ChessPiece.WHITE
     reverse(row, col, data.board[row][col])
-    data.current_chesspiece_num = data.current_chesspiece_num + 1
-    if data.current_chesspiece_num == 64:
-        data.state = GameState.FINISH
-    # gui.draw()
+    data.current_chesspiece_num += 1
+    check_finish()
     return True
 
 
@@ -467,9 +407,78 @@ def click_right(event):
     gui.draw()
 
 
-def click_debug(event):
-    print(data)
+# ------------------------------------- 自动下棋代码 -----------------------------------
+class Result:
+    def __init__(self):
+        self.white_num = 0
+        self.black_num = 0
+        self.loop = 0
+        self.white_win = 0
+        self.black_win = 0
+        self.no_win = 0
 
+
+def click_auto(event):
+    global data
+    global total_Time
+    loop = simpledialog.askinteger("Auto", "请输入棋局总数")
+    result = Result()
+
+    while result.loop < int(loop):
+        data = ReversiData(GameState.AUTO)
+        total_Time = 0
+        auto_run()
+        save_result(result)
+    # fmt: off
+    print("共下 {} 局, 白棋赢 {} 局, 黑棋赢 {} 局，和棋 {} 局".format(result.loop, result.white_win, result.black_win, result.no_win))
+    print("白棋共有: {}, 平均每局: {}".format(result.white_num, result.white_num / result.loop))
+    print("黑棋共有: {}, 平均每局: {}".format(result.black_num, result.black_num / result.loop))
+    # fmt: on
+    data = ReversiData()
+
+
+def save_result(result):
+    white_num = 0
+    black_num = 0
+    for row in range(8):
+        for col in range(8):
+            white_num += data.board[row][col] == ChessPiece.WHITE
+            black_num += data.board[row][col] == ChessPiece.BLACK
+    who_win = lambda a, b: ("白棋赢" if a > b else ("黑棋赢" if b > a else "平局"))
+    # fmt: off
+    print("白棋:{}, 黑棋:{}, {}\nAI总耗时: {:.6} 秒".format(white_num, black_num, who_win(white_num, black_num), total_Time))
+    # fmt: on
+    result.white_num += white_num
+    result.black_num += black_num
+    result.loop += 1
+    result.white_win += white_num > black_num
+    result.black_win += white_num < black_num
+    result.no_win += white_num == black_num
+
+
+def auto_run():
+    global data
+    while data.state != GameState.AUTO_FINISH:
+        t = candidate_position()
+        if not t:
+            print("黑棋当前无子可下，白棋再下一回合")
+            if not ai():
+                data.state = GameState.AUTO_FINISH
+                print("双方都无子可下，提前结束棋局")
+            continue
+        pos = random.choice(t)
+        row = pos.row
+        col = pos.col
+        print("黑棋落子 [{}, {}]".format(row, col))
+        data.board[row][col] = ChessPiece.BLACK
+        reverse(row, col, data.board[row][col])
+        data.current_chesspiece_num = data.current_chesspiece_num + 1
+        # 判断棋局是否结束
+        check_finish()
+        ai()
+
+
+# ------------------------------------- 自动下棋代码 -----------------------------------
 
 if __name__ == "__main__":
     if platform.system() != "Windows":
@@ -478,8 +487,6 @@ if __name__ == "__main__":
     data = ReversiData()
 
     gui = ReversiGUI()
-
-    result = Result()
 
     total_Time = 0
 
