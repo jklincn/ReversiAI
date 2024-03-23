@@ -120,6 +120,7 @@ def mctsNextPosition(board):
 
         return (reward / nplayout) + cval * math.sqrt(2 * math.log(t) / nplayout)
 
+    # 不断递归随机下棋，返回最终谁赢了，机器赢了True
     def find_playout(tep_board, tile, depth=0):
         def eval_board(tep_board):
             player_tile = countTile(tep_board, PLAYER_NUM)
@@ -165,6 +166,7 @@ def mctsNextPosition(board):
             result.append((temp, 0, 0, []))
         return result
 
+    # 通过ucb算法和最大最小搜索，返回下一步棋
     def find_path(root, total_playout):
         current_path = []
         child = root
