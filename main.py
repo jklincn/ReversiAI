@@ -43,6 +43,13 @@ class GameState(Enum):
     START = 0
     FINISH = 1
 
+# 下棋状态
+class Difficulty(Enum):
+    # AI永远执白棋
+    EASY = 0
+    MEDIUM = 1
+    HARD = 2 
+
 
 class Position:
     def __init__(self, row=-1, col=-1):
@@ -83,6 +90,7 @@ class ReversiData:
         self.board[4][4] = ChessPiece.WHITE
 
         self.state = GameState.START
+        self.difficulty = Difficulty.EASY
         self.current_chesspiece_num = 4  # 当前棋子数量
 
     def __repr__(self):
@@ -126,9 +134,11 @@ class ReversiGUI(tk.Tk):
         self.board = tk.Canvas(self, width=self.line_width*8, height=self.line_width*8, borderwidth=2, relief="ridge", bg="#FCD57D")
         self.board.grid(row=0, column=0, padx=10, pady=5, sticky="nw")
         # 绑定鼠标事件
-        self.board.bind("<Button-1>", click_left)
-        self.board.bind("<Button-2>", click_debug)
-        self.board.bind("<Button-3>", click_right)
+        self.board.bind("<Button-1>", click_left) # 左键下棋
+        self.board.bind("<Button-2>", click_debug) # 中键输出调试信息
+        self.board.bind("<Button-3>", click_right) # 右键重置
+        self.board.bind("<Button-4>", click_right) # 滚轮向上
+        self.board.bind("<Button-5>", click_right) # 滚轮向下
 
         # test 
         self.bind("<KeyPress>", test)
