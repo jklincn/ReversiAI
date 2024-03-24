@@ -279,14 +279,30 @@ def click_left(event):
     t = candidate_position()
 
     if Position(row, col) in t:
-        data.board[row][col] = ChessPiece.BLACK
-        # 调用 reverse() 翻转
-        reverse(row, col, data.board[row][col])
-        # 整个棋盘多一颗棋子
-        data.current_chesspiece_num = data.current_chesspiece_num + 1
-        # 判断棋局是否结束
-        check_finish()
-        ai()
+        put_chess_piece(row, col, ChessPiece.BLACK)
+        turn_ai()
+
+
+def put_chess_piece(row, col, color):
+    global data
+    # 落子
+    data.board[row][col] = color
+    # 调用 reverse() 翻转
+    reverse(row, col, data.board[row][col])
+    # 整个棋盘多一颗棋子
+    data.current_chesspiece_num += 1
+
+
+def turn_ai():
+    # 判断棋局是否结束
+    if data.current_chesspiece_num == 64:
+        data.state = GameState.FINISH
+        gui.draw()
+        return
+    ai()
+    if data.current_chesspiece_num == 64:
+        data.state = GameState.FINISH
+    gui.draw()
 
 
 def transform_board():
@@ -303,7 +319,7 @@ def check_finish():
     if data.state == GameState.AUTO:
         if data.current_chesspiece_num == 64:
             data.state = GameState.AUTO_FINISH
-        return
+        return  # 自动下棋模式不画棋盘
     if data.current_chesspiece_num == 64:
         data.state = GameState.FINISH
     gui.draw()
@@ -312,8 +328,6 @@ def check_finish():
 # AI 落子
 def ai():
     global total_Time
-    if data.state == GameState.FINISH or data.state == GameState.AUTO_FINISH:
-        return True
     tmp_borad = transform_board()
     # 判断AI是否无子可下
     if not rvs.possible_positions(tmp_borad, rvs.COMPUTER_NUM):
@@ -326,10 +340,7 @@ def ai():
     # fmt: off
     print("白棋落子 [{}, {}], 此步耗时: {:.6} 秒".format(row, col, end_time - start_time))
     # fmt: on
-    data.board[row][col] = ChessPiece.WHITE
-    reverse(row, col, data.board[row][col])
-    data.current_chesspiece_num += 1
-    check_finish()
+    put_chess_piece(row, col, ChessPiece.WHITE)
     return True
 
 
@@ -475,24 +486,27 @@ def save_result(result):
 
 def auto_run():
     global data
-    while data.state != GameState.AUTO_FINISH:
+    while True:
         t = candidate_position()
         if not t:
             print("黑棋当前无子可下，白棋再下一回合")
             if not ai():
-                data.state = GameState.AUTO_FINISH
                 print("双方都无子可下，提前结束棋局")
+                break
+            if data.current_chesspiece_num == 64:
+                break
             continue
         pos = random.choice(t)
         row = pos.row
         col = pos.col
         print("黑棋落子 [{}, {}]".format(row, col))
-        data.board[row][col] = ChessPiece.BLACK
-        reverse(row, col, data.board[row][col])
-        data.current_chesspiece_num = data.current_chesspiece_num + 1
+        put_chess_piece(row, col, ChessPiece.BLACK)
         # 判断棋局是否结束
-        check_finish()
+        if data.current_chesspiece_num == 64:
+            break
         ai()
+        if data.current_chesspiece_num == 64:
+            break
 
 
 # ------------------------------------- 自动下棋代码 End -----------------------------------
