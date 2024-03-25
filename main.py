@@ -280,7 +280,11 @@ def click_left(event):
 
     if Position(row, col) in t:
         put_chess_piece(row, col, ChessPiece.BLACK)
-        turn_ai()
+        if data.current_chesspiece_num == 64:
+            data.state = GameState.FINISH
+            gui.draw()
+            return
+        ai()
 
 
 def put_chess_piece(row, col, color):
@@ -293,18 +297,6 @@ def put_chess_piece(row, col, color):
     data.current_chesspiece_num += 1
 
 
-def turn_ai():
-    # 判断棋局是否结束
-    if data.current_chesspiece_num == 64:
-        data.state = GameState.FINISH
-        gui.draw()
-        return
-    ai()
-    if data.current_chesspiece_num == 64:
-        data.state = GameState.FINISH
-    gui.draw()
-
-
 def transform_board():
     board = {}
     for row in range(8):
@@ -312,17 +304,6 @@ def transform_board():
         for col in range(8):
             board[row][col] = data.board[row][col].value
     return board
-
-
-def check_finish():
-    global data
-    if data.state == GameState.AUTO:
-        if data.current_chesspiece_num == 64:
-            data.state = GameState.AUTO_FINISH
-        return  # 自动下棋模式不画棋盘
-    if data.current_chesspiece_num == 64:
-        data.state = GameState.FINISH
-    gui.draw()
 
 
 # AI 落子
@@ -341,6 +322,10 @@ def ai():
     print("白棋落子 [{}, {}], 此步耗时: {:.6} 秒".format(row, col, end_time - start_time))
     # fmt: on
     put_chess_piece(row, col, ChessPiece.WHITE)
+    if data.current_chesspiece_num == 64:
+        data.state = GameState.FINISH
+    if data.state != GameState.AUTO:
+        gui.draw()
     return True
 
 
