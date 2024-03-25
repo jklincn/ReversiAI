@@ -284,6 +284,7 @@ def click_left(event):
             data.state = GameState.FINISH
             gui.draw()
             return
+        gui.draw()
         ai()
 
 
