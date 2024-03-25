@@ -334,7 +334,7 @@ def ai():
         print("白棋当前无子可下，黑棋再下一回合")
         return False
     start_time = time.perf_counter()
-    row, col = rvs.mctsNextPosition(tmp_borad)
+    row, col = rvs.mctsNextPosition(tmp_borad, data.difficulty.value)
     end_time = time.perf_counter()
     total_Time = total_Time + end_time - start_time
     # fmt: off
