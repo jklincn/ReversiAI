@@ -108,7 +108,18 @@ def updateBoard(board, tile, i, j, checkonly=False):
 
 
 # 蒙特卡洛树搜索
-def mctsNextPosition(board):
+def mctsNextPosition(board, difficulty):
+    def get_difficulty_param(difficulty):
+        EASY = (2000, 1, -1)
+        MEDIUM = (2000, 0.5, 0.1)
+        HARD = (2000, 0.1, -0.1)
+        if difficulty == 0:
+            return EASY
+        if difficulty == 1:
+            return MEDIUM
+        if difficulty == 2:
+            return HARD
+
     def ucb1(node_tuple, t, cval):
         name, nplayout, reward, childrens = node_tuple
 
@@ -120,6 +131,7 @@ def mctsNextPosition(board):
 
         return (reward / nplayout) + cval * math.sqrt(2 * math.log(t) / nplayout)
 
+    # 不断递归随机下棋，返回最终谁赢了，机器赢了True
     def find_playout(tep_board, tile, depth=0):
         def eval_board(tep_board):
             player_tile = countTile(tep_board, PLAYER_NUM)
@@ -165,7 +177,8 @@ def mctsNextPosition(board):
             result.append((temp, 0, 0, []))
         return result
 
-    def find_path(root, total_playout):
+    # 通过ucb算法和最大最小搜索，返回下一步棋
+    def find_path(root, total_playout, difficulty_param):
         current_path = []
         child = root
         parent_playout = total_playout
@@ -186,7 +199,7 @@ def mctsNextPosition(board):
 
                 #实现最大最小搜索，电脑选择最大值，玩家选择最小值
                 if isMCTSTurn:
-                    cval = ucb1(n_tuple, parent_playout, 1)
+                    cval = ucb1(n_tuple, parent_playout, difficulty_param[1])
 
                     if cval >= maxval:
                         if cval == maxval:
@@ -195,7 +208,7 @@ def mctsNextPosition(board):
                             maxidxlist = [cidx]
                             maxval = cval
                 else:
-                    cval = ucb1(n_tuple, parent_playout, -10)
+                    cval = ucb1(n_tuple, parent_playout, difficulty_param[2])
 
                     if cval <= maxval:
                         if cval == maxval:
@@ -217,13 +230,14 @@ def mctsNextPosition(board):
         return current_path
 
     root = expand(board, COMPUTER_NUM)
+    difficulty_param = get_difficulty_param(difficulty)
     current_board = getInitialBoard()
     current_board2 = getInitialBoard()
 
-    for loop in range(0, 6000):
+    for loop in range(0, difficulty_param[0]):
 
         # current_path是一个放置棋子的位置列表，根据此列表进行后续操作
-        current_path = find_path(root, loop)
+        current_path = find_path(root, loop, difficulty_param)
         tile = COMPUTER_NUM
         for temp in current_path:
             updateBoard(current_board, tile, temp[0], temp[1])
